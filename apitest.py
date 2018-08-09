@@ -4,8 +4,6 @@ import time
 import sqlite3
 from pathlib import Path
 
-# Test comment
-
 # This class is to have an easily portable data structure to add things to
 # the database or whatever else is necessary
 class datum():
