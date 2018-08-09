@@ -3,7 +3,7 @@ import json
 import time
 import sqlite3
 from pathlib import Path
-
+#this is bereket
 
 # This class is to have an easily portable data structure to add things to
 # the database or whatever else is necessary
