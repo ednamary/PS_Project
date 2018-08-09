@@ -45,27 +45,21 @@ class datum():
         print("Image URL", self.image)
 
 
-def save_to_database(new):
-    # This function takes a datum element and saves it to the database if no such
-    # element already exists.
-
+def check_database(upc):
     # Check if data is already in the database
-    cur.execute('SELECT UPCnum from UPC WHERE UPCnum = ?', (new.upc, ))
+    cur.execute('SELECT UPCnum from UPC WHERE UPCnum = ?', (upc, ))
     row = cur.fetchone()
 
     if row is not None: # Data is already in the database, just return
         # In future this will probably pass that database element to the SS
         # or CSV or whatever
-        print("UPC Number", new.upc, "already in database")
-        return
+        return True
+    return False
 
-    if new.missing == True:
-        # There is missing information
-        # For now, just write to Database and inform User
-        # In future, this will probably write to a log of some sort
-        print("Missing information from UPC", new.upc + ".")
+def save_to_database(new):
+    # This function takes a datum element and saves it to the database.
 
-        # Insert into the database
+    # Insert into the database
     cur.execute('INSERT INTO UPC (UPCnum, Title, Description, Brand, Weight, Image)'
                 'VALUES (?, ?, ?, ?, ?, ?)',
                 (new.upc, new.title, new.description, new.brand, new.weight, new.image)
@@ -73,14 +67,15 @@ def save_to_database(new):
     con.commit()
     return
 
-def create_input():
-    # This function currently takes a list of upc numbers from a text file
-    # and passes each of them to the upcitemdb. It creates an object from
-    # the relevant data and passes it to the database.
+def find_input():
+    # This function requests user input of a file of upc numbers.
+    # For each value, it checks if the value is already in the database.
+    # If it isn't, it calls a function to add it
+
     inp = Path(input('select input file: '))
 
     # Check if the user input is a file. Moving forward, will be expanded to
-    # check if it's a file of the wrong type
+    # check if it's a file of the wrong type.
     if not inp.is_file():
         print(inp, 'is not a file.')
         return
@@ -95,41 +90,56 @@ def create_input():
     cur = con.cursor()
 
     for line in data:
-        # Create a new mini dictionary to use with the Requests syntax
-        # To do: find out if it's possible to make one large dictionary and do
-        # one large API call instead of a bunch of tiny ones
-        parameters = {'upc': line.rstrip()}
+        upc = line.rstrip()
+        is_in = check_database(upc)
+
+        if is_in:
+            print("UPC Number", upc, "already in database")
+        else:
+            create_input(upc)
 
 
-        while True:
-            response = requests.get('https://api.upcitemdb.com/prod/trial/lookup', params=parameters)
-            # Print the content of the response (the data the server returned)
-            # The thing that actually gets sent is
-            # https://api.upcitemdb.com/prod/trial/lookup?upc=<line>
-
-            dat = response.json()
-            # Convert to json
-
-            if dat['code'] == 'TOO_FAST':
-                # Throtted because we sent more than 6 requests per minutes
-                # rerun loop iteration after waiting a minute
-                time.sleep(60)
-                continue
-            elif dat['code'] == 'EXCEED_LIMIT':
-                # Done more than 100, the limit on upcitemdb for trial version
-                print('\n\n\n Reached API limit for the day')
-                return
-            if dat['total'] == 0:
-                # Item not in Database accessed by API
-                # Add to our database so we know for the future
-                # We create dummy values for everything but upc itself
-                dat['items'] = []
-                dat['items'].append({'upc': parameters['upc'], 'title': '', 'description': '',
-                                    'brand': '', 'weight': '', 'images': ''})
-
-            save_to_database(datum(dat))
-            # Exit while(true) loop
-            break
+def create_input(upc):
+    # This function currently takes a upc number not already in the DB
+    # and passes it to the upcitemdb. It creates an object from
+    # the relevant data and passes it to the save_to_database function.
 
 
-create_input()
+    # Create a new mini dictionary to use with the Requests syntax
+    # To do: find out if it's possible to make one large dictionary and do
+    # one large API call instead of a bunch of tiny ones
+    parameters = {'upc': upc}
+
+
+    while True:
+        response = requests.get('https://api.upcitemdb.com/prod/trial/lookup', params=parameters)
+        # Print the content of the response (the data the server returned)
+        # The thing that actually gets sent is
+        # https://api.upcitemdb.com/prod/trial/lookup?upc=<line>
+
+        dat = response.json()
+        # Convert to json
+
+        if dat['code'] == 'TOO_FAST':
+            # Throtted because we sent more than 6 requests per minutes
+            # rerun loop iteration after waiting a minute
+            time.sleep(60)
+            continue
+        elif dat['code'] == 'EXCEED_LIMIT':
+            # Done more than 100, the limit on upcitemdb for trial version
+            print('\n\n\n Reached API limit for the day')
+            return
+        if dat['total'] == 0:
+            # Item not in Database accessed by API
+            # Add to our database so we know for the future
+            # We create dummy values for everything but upc itself
+            dat['items'] = []
+            dat['items'].append({'upc': parameters['upc'], 'title': '', 'description': '',
+                                'brand': '', 'weight': '', 'images': ''})
+
+        save_to_database(datum(dat))
+        # Exit while(true) loop
+        break
+
+
+find_input()
