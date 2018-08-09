@@ -67,8 +67,8 @@ def create_input():
         print(inp, 'is not a file.')
         return
 
-    prev = 'C:\\Users\\User\\Desktop\\database.txt'
-    prev = open(prev, 'a')
+ #   prev = 'C:\\Users\\User\\Desktop\\database.txt'
+ #   prev = open(prev, 'a')
 
     data = open(inp, 'r')
     global con, cur
