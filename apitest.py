@@ -48,6 +48,7 @@ class datum():
 
 def check_database(upc):
     # Check if data is already in the database
+
     cur.execute('SELECT UPCnum from UPC WHERE UPCnum = ?', (upc, ))
     row = cur.fetchone()
 
@@ -87,7 +88,7 @@ def find_input():
     # Note that this is Global so that I don't have to reopen the SS every time
     # or pass things back and forth constantly.
     global con, cur
-    con = sqlite3.connect("C:\\Users\\User\\Documents\\Python Practice\\API Spreadsheet\\UPCData.db")
+    con = sqlite3.connect("UPCData.db")
     cur = con.cursor()
 
     for line in data:
