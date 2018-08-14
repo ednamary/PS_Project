@@ -33,19 +33,4 @@ for line in inp:
         ere = ''.join((sett, str(n)))   
         print(ere)
         
-        
-        conn = sqlite3.connect('bere_DB.db')
-
-
-
-        try:
-            conn.execute('''CREATE TABLE bereket
-                   (UPC_s INTEGER NOT NULL)''')
-                    #conn = sqlite3.connect("test.db")
-            cur = conn.cursor()
-            conn.execute("INSERT INTO bereket (UPC_ss) \
-                      VALUES (?)", [ere])
-            conn.commit()
-            conn.close();
-        except:
-            pass
+       
