@@ -1,3 +1,4 @@
+import sqlite3
 inp = input('select input file: ')
 inp=open(inp, "r")
 #foo = fun.rstrip()
@@ -31,5 +32,20 @@ for line in inp:
             n = 0
         ere = ''.join((sett, str(n)))   
         print(ere)
+        
+        
+        conn = sqlite3.connect('bere_DB.db')
 
-    #print(Sum)
+
+
+        try:
+            conn.execute('''CREATE TABLE bereket
+                   (UPC_s INTEGER NOT NULL)''')
+                    #conn = sqlite3.connect("test.db")
+            cur = conn.cursor()
+            conn.execute("INSERT INTO bereket (UPC_ss) \
+                      VALUES (?)", [ere])
+            conn.commit()
+            conn.close();
+        except:
+            pass
