@@ -93,6 +93,7 @@ def find_input():
 
     for line in data:
         upc = line.rstrip()
+        print(upc)
         is_in = check_database(upc)
 
         if is_in:

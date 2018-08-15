@@ -6,7 +6,7 @@ import sqlite3
 # This class is to have an easily portable data structure to add things to
 # the database or whatever else is necessary
 class datum():
-    def __init__(self,  json_dict):
+    def __init__(self,  json_dict, upc=0, item="No item number"):
         # Missing is a flag to check if there is any data Missing
         # The idea is to inform the user so they can figure out what to do
         self.missing = False
@@ -16,6 +16,7 @@ class datum():
         # very wrong has happened.
         self.upc = json_dict['items'][0]['upc']
         self.title = json_dict['items'][0]['title']
+        self.item = item
         if self.title == '':
             self.missing = True
         self.description = json_dict['items'][0]['description']
@@ -42,18 +43,28 @@ class datum():
         print("Weight", self.weight)
         print("Image URL", self.image)
 
+    def insert_tuple(tup):
+        self.upc = tup[0]
+        self.title = tup[1]
+        self.description = tup[2]
+        self.brand = tup[3]
+        self.weight = tup[4]
+        self.image = tup[5]
+
+
 
 def check_database(upc, con, cur):
     # Check if data is already in the database
 
-    cur.execute('SELECT UPCnum from UPC WHERE UPCnum = ?', (upc, ))
+    cur.execute('SELECT * from UPC WHERE UPCnum = ?', (upc, ))
     row = cur.fetchone()
 
-    if row is not None: # Data is already in the database, just return
+#    if row is not None: # Data is already in the database, just return
         # In future this will probably pass that database element to the SS
         # or CSV or whatever
-        return True
-    return False
+#        return True, row
+#    return False
+    return row
 
 def save_to_database(new):
     # This function takes a datum element and saves it to the database.
@@ -64,7 +75,7 @@ def save_to_database(new):
                 (new.upc, new.title, new.description, new.brand, new.weight, new.image)
                 )
     con.commit()
-    return
+    return(cur.fetchone())
 
 
 def create_input(upc, con, cur):
@@ -97,7 +108,10 @@ def create_input(upc, con, cur):
         elif dat['code'] == 'EXCEED_LIMIT':
             # Done more than 100, the limit on upcitemdb for trial version
             print('\n\n\n Reached API limit for the day')
-            return
+            return 0
+        elif dat['code'] == 'INVALID_UPC':
+            print('Invalid UPC')
+            return 0
         if dat['total'] == 0:
             # Item not in Database accessed by API
             # Add to our database so we know for the future
@@ -106,6 +120,10 @@ def create_input(upc, con, cur):
             dat['items'].append({'upc': parameters['upc'], 'title': '', 'description': '',
                                 'brand': '', 'weight': '', 'images': ''})
 
-        save_to_database(datum(dat))
+        new = datum(dat)
+        save_to_database(new)
+        return dat
+#        export(dat)
         # Exit while(true) loop
-        break
+
+#def export():z
