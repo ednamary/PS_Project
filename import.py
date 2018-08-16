@@ -67,7 +67,7 @@ def text_input(inp, output, sheet):
             continue
         # Pass to new spreadsheet
         # Item_no set to 0 because it's not included in txt inputs
-        row_num = export(r, 0, output, sheet, row_num)
+        row_num = export(r, 0, sheet, row_num)
     close(data)
     output.close()
     return
@@ -77,10 +77,34 @@ def excel_input(wb, output, sheet):
 
     # Hardcoded assuming it begins where it does in Product with UPC.xlsx
     # Needs to be updated
-    ws = wb.sheet_by_index(1)
-    row = 1
-    col = 4
+    ws = wb.sheet_by_index(0)
+    row = 0
+    col = 0
+    item_found = False
+    upc_found = False
 
+    while ws.cell(row, col).value != xlrd.empty_cell.value:
+        v = str(ws.cell(row, col).value.strip())
+        print('x')
+        if v.lower().startswith('upc'):
+            if upc_found == True:
+                # Add something else here in future
+                print("Two columns of UPCs found in Spreadsheet")
+            upc_col = col
+            upc_found = True
+        elif v.lower().startswith('item'):
+            if item_found == True:
+                print("Two item number columns found in spreadsheet")
+            item_col = col
+            item_found = True
+
+        if item_found and upc_found:
+            break
+        col+=1
+    if not upc_found:
+        print("No UPC column")
+        return
+    row = 1
     # Connect to the database and create a cursor to do operations
     con = sqlite3.connect("UPCData.db")
     cur = con.cursor()
@@ -89,11 +113,11 @@ def excel_input(wb, output, sheet):
     # Extremely inelegant, want to come up with better method
     row_num = 1
 
-    print(ws.cell(row, col).value)
     # iterate through the column of UPCs
-    while ws.cell(row, col).value != xlrd.empty_cell.value:
+    while ws.cell(row, upc_col).value != xlrd.empty_cell.value:
+        print('y')
         # Get value of UPC
-        upc = int(ws.cell(row, col).value.strip())
+        upc = int(ws.cell(row, upc_col).value.strip())
 
         print(upc, type(upc))
         # Go to next row of input spreadsheet
@@ -106,9 +130,9 @@ def excel_input(wb, output, sheet):
             continue
         # Pass to new spreadsheet
         # col-3 is a magic number for the item_no column of initial spreadsheet
-        row_num = export(r, ws.cell(row, col-3).value, output, sheet, row_num)
+        row_num = export(r, ws.cell(row, item_col).value, sheet, row_num)
     output.close()
-    return 0
+    return
 
 
 # Check the input and return based on result
@@ -126,7 +150,7 @@ def check_input(upc, con, cur):
     return r
 
 # Send to database
-def export(tup, item_no, output, sheet, row_num):
+def export(tup, item_no, sheet, row_num):
     # write_row requires a list, so convert tuple to list and and item_no
     li = list(tup)
     li.insert(0, item_no)
