@@ -5,6 +5,7 @@ import xlsxwriter
 import work_with_database
 
 def check_validity(upc):
+    upc = str(upc)
     if len(upc) == 12:
         return upc
     elif len(upc) == 11:
@@ -67,7 +68,7 @@ def text_input(inp):
     for line in data:
         upc = line.rstrip()
         check = check_validity(upc)
-        if len(check) == 12:
+        if len(str(check)) == 12:
             upc = check
         else:
             temp = [0, upc]
@@ -136,7 +137,7 @@ def excel_input(wb):
         upc = int(ws.cell(row, upc_col).value.strip())
 
         check = check_validity(upc)
-        if len(check) == 12:
+        if len(str(check)) == 12:
             upc = check
         else:
             temp = [0, upc]
