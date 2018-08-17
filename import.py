@@ -38,7 +38,7 @@ def get_input():
     if inp.lower().endswith(('.xls', '.xlsx')):
         data = xlrd.open_workbook(inp)
 #        excel_input(data, output, sheet)
-        excel_input(data, output, sheet)
+        excel_input(data)
 
     # Check if text list of UPCs
     elif inp.lower().endswith(('.txt', )):
@@ -54,6 +54,7 @@ def get_input():
 # UPC2
 # UPC3, etc
 def text_input(inp):
+    rate_limit = False
     data = open(inp, 'r')
 
     # Connect to the database and create a cursor to do operations
@@ -73,7 +74,9 @@ def text_input(inp):
             to_export.append(temp)
             continue
         # Recieve tuple to pass into new spreadsheet
-        r=check_input(upc, con, cur)
+        r=check_input(upc, con, cur, rate_limit)
+        if r == 1:
+            rate_limit = True
         try:
             temp = list(r)
             temp.insert(0, 0)
@@ -85,7 +88,7 @@ def text_input(inp):
     return
 
 # The code that processes these inputs
-def excel_input(wb, output, sheet):
+def excel_input(wb):
 
     # Hardcoded assuming it begins where it does in Product with UPC.xlsx
     # Needs to be updated
@@ -94,6 +97,7 @@ def excel_input(wb, output, sheet):
     col = 0
     item_found = False
     upc_found = False
+    rate_limit = False
 
     while ws.cell(row, col).value != xlrd.empty_cell.value:
         v = str(ws.cell(row, col).value.strip())
@@ -131,19 +135,33 @@ def excel_input(wb, output, sheet):
         # Get value of UPC
         upc = int(ws.cell(row, upc_col).value.strip())
 
-        print(upc, type(upc))
+        check = check_validity(upc)
+        if len(check) == 12:
+            upc = check
+        else:
+            temp = [0, upc]
+            to_export.append(temp)
+            continue
         # Go to next row of input spreadsheet
         row += 1
         # Recieve tuple to pass into new spreadsheet
-        r=check_input(upc, con, cur)
-        if r == 0:
-            # Pass to new spreadsheet
-            # Item_no set to 0 because it's not included in txt inputs
-            continue
+        r=check_input(upc, con, cur, rate_limit)
         # Pass to new spreadsheet
         # col-3 is a magic number for the item_no column of initial spreadsheet
         if item_found == False:
             item_no = 0
+        if r == 1:
+            rate_limit = True
+            temp = [item_no, upc]
+            to_export.append(temp)
+            continue
+        if r == 0:
+            # Pass to new spreadsheet
+            # Item_no set to 0 because it's not included in txt inputs
+            temp = [item_no, upc]
+            to_export.append(temp)
+            continue
+
         # IF r is just a return code
         try:
             temp = list(r)
@@ -157,17 +175,21 @@ def excel_input(wb, output, sheet):
 
 
 # Check the input and return based on result
-def check_input(upc, con, cur):
+def check_input(upc, con, cur, rate_limit):
 
     # Find out if element is already in db
     r=work_with_database.check_database(upc, con, cur)
 
-    if r is None:
+    if r is not None:
         # Is not in db, so create new input
+        print("UPC Number", upc, "already in database")
+    elif rate_limit == False:
         r=work_with_database.create_input(upc, con, cur)
     else:
+        r = 0
+        print("new element but rate capped")
         # Already in
-        print("UPC Number", upc, "already in database")
+
     return r
 
 # Send to database
