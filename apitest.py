@@ -45,7 +45,6 @@ class datum():
         print("Weight", self.weight)
         print("Image URL", self.image)
 
-
 def check_database(upc):
     # Check if data is already in the database
 

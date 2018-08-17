@@ -4,22 +4,32 @@ import xlsxwriter
 #from pathlib import Path
 import work_with_database
 
+def check_validity(upc):
+    if len(upc) == 12:
+        return upc
+    elif len(upc) == 11:
+        sum = 0
+        for i in range(upc):
+                if i % 2 == 0:
+                    temp = 3*(int(sett[i]))
+                    sum +=temp
+                else:
+                    temp = int(sett[i])
+                    sum +=temp
+        if Sum %10 > 0:
+            n = 10-(Sum%10)
+        else:
+            n = 0
+        ere = ''.join((sett, str(n)))
+        return ere
+
+    else:
+        return 0
+
 def get_input():
     # This function requests user input of a file of upc numbers.
     # For each value, it checks if the value is already in the database.
     # If it isn't, it calls a function to add it
-
-    # Create initial worksheet. Note that xlsxwriter requires the worksheet
-    # to not exist when you run the code so another library should probably be used.
-    output = xlsxwriter.Workbook('output.xlsx')
-    sheet = output.add_worksheet()
-    sheet.write('A1', 'Item ID')
-    sheet.write('B1', 'UPC code')
-    sheet.write('C1', 'Product Name')
-    sheet.write('D1', 'Product Brand')
-    sheet.write('E1', 'Product Description')
-    sheet.write('F1', 'Weight')
-    sheet.write('G1', 'Image')
 
     # File with initial spreadsheet, currently can take xls, xlsx, or txt
     inp = input('select input file: ')
@@ -33,7 +43,7 @@ def get_input():
     # Check if text list of UPCs
     elif inp.lower().endswith(('.txt', )):
         print(inp, 'is not a workbook.')
-        text_input(inp, output, sheet)
+        text_input(inp)
     # No current plans for other extensions
     else:
         print('invalid file extension')
@@ -43,33 +53,35 @@ def get_input():
 # UPC1
 # UPC2
 # UPC3, etc
-def text_input(inp, output, sheet):
+def text_input(inp):
     data = open(inp, 'r')
 
     # Connect to the database and create a cursor to do operations
     con = sqlite3.connect("UPCData.db")
     cur = con.cursor()
 
-    # This is for passing to new spreadsheet, keeps track of row
-    # Extremely inelegant, want to come up with better method
-    row_num = 1
+    to_export = []
 
     # Loop over data
     for line in data:
-        print(line)
         upc = line.rstrip()
-        print(upc)
+        check = check_validity(upc)
+        if len(check) == 12:
+            upc = check
+        else:
+            temp = [0, upc]
+            to_export.append(temp)
+            continue
         # Recieve tuple to pass into new spreadsheet
         r=check_input(upc, con, cur)
-        if r == 0:
-            # Input is invalid for some reason, skip to next element
-            # probably needs to add in some way
-            continue
-        # Pass to new spreadsheet
-        # Item_no set to 0 because it's not included in txt inputs
-        row_num = export(r, 0, sheet, row_num)
+        try:
+            temp = list(r)
+            temp.insert(0, 0)
+            to_export.append(temp)
+        except:
+            pass
     close(data)
-    output.close()
+    export(to_export)
     return
 
 # The code that processes these inputs
@@ -111,7 +123,7 @@ def excel_input(wb, output, sheet):
 
     # This is for passing to new spreadsheet, keeps track of row
     # Extremely inelegant, want to come up with better method
-    row_num = 1
+    to_export = []
 
     # iterate through the column of UPCs
     while ws.cell(row, upc_col).value != xlrd.empty_cell.value:
@@ -130,8 +142,17 @@ def excel_input(wb, output, sheet):
             continue
         # Pass to new spreadsheet
         # col-3 is a magic number for the item_no column of initial spreadsheet
-        row_num = export(r, ws.cell(row, item_col).value, sheet, row_num)
-    output.close()
+        if item_found == False:
+            item_no = 0
+        # IF r is just a return code
+        try:
+            temp = list(r)
+            temp.insert(0, item_no)
+            to_export.append(temp)
+        except:
+            pass
+
+    export(to_export)
     return
 
 
@@ -150,15 +171,26 @@ def check_input(upc, con, cur):
     return r
 
 # Send to database
-def export(tup, item_no, sheet, row_num):
-    # write_row requires a list, so convert tuple to list and and item_no
-    li = list(tup)
-    li.insert(0, item_no)
-
-    #write row to spreadsheet
-    sheet.write_row(row_num, 0, li)
-    # to write in next available row
-    return(row_num + 1)
+def export(upcs):
+    # Create initial worksheet. Note that xlsxwriter requires the worksheet
+    # to not exist when you run the code so another library should probably be used.
+    output = xlsxwriter.Workbook('output.xlsx')
+    sheet = output.add_worksheet()
+    sheet.write('A1', 'Item ID')
+    sheet.write('B1', 'UPC code')
+    sheet.write('C1', 'Product Name')
+    sheet.write('D1', 'Product Brand')
+    sheet.write('E1', 'Product Description')
+    sheet.write('F1', 'Weight')
+    sheet.write('G1', 'Image')
+    line = 1
+    for upc in upcs:
+        #write row to spreadsheet
+        sheet.write_row(line, 0, li)
+        line += 1
+        # to write in next available row
+    output.close()
+    return
 
 
 get_input()

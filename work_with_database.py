@@ -66,7 +66,7 @@ def check_database(upc, con, cur):
 #    return False
     return row
 
-def save_to_database(new):
+def save_to_database(new, con, cur):
     # This function takes a datum element and saves it to the database.
 
     # Insert into the database
@@ -108,7 +108,7 @@ def create_input(upc, con, cur):
         elif dat['code'] == 'EXCEED_LIMIT':
             # Done more than 100, the limit on upcitemdb for trial version
             print('\n\n\n Reached API limit for the day')
-            return 0
+            return 1
         elif dat['code'] == 'INVALID_UPC':
             print('Invalid UPC')
             return 0
@@ -121,7 +121,7 @@ def create_input(upc, con, cur):
                                 'brand': '', 'weight': '', 'images': ''})
 
         new = datum(dat)
-        save_to_database(new)
+        save_to_database(new, con, cur)
         return dat
 #        export(dat)
         # Exit while(true) loop
