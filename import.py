@@ -16,16 +16,16 @@ def check_validity(upc):
         sum = 0
         for i in range(upc):
                 if i % 2 == 0:
-                    temp = 3*(int(sett[i]))
+                    temp = 3*(int(upc[i]))
                     sum +=temp
                 else:
-                    temp = int(sett[i])
+                    temp = int(upc[i])
                     sum +=temp
         if Sum %10 > 0:
             n = 10-(Sum%10)
         else:
             n = 0
-        ere = ''.join((sett, str(n)))
+        ere = ''.join((upc, str(n)))
         return ere
     # Return 0 if not 11 or 12 digit UPC
     else:
