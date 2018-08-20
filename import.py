@@ -110,7 +110,6 @@ def excel_input(wb):
 
     while ws.cell(row, col).value != xlrd.empty_cell.value:
         v = str(ws.cell(row, col).value.strip())
-        print('x')
         if v.lower().startswith('upc'):
             if upc_found == True:
                 # Add something else here in future
@@ -140,7 +139,6 @@ def excel_input(wb):
 
     # iterate through the column of UPCs
     while ws.cell(row, upc_col).value != xlrd.empty_cell.value:
-        print('y')
         # Get value of UPC
         upc = int(ws.cell(row, upc_col).value.strip())
 
