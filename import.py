@@ -4,11 +4,15 @@ import xlsxwriter
 #from pathlib import Path
 import work_with_database
 
+
+# Bereket's code t ocheck for validity
 def check_validity(upc):
     upc = str(upc)
+    # Return 12 digit UPC number
     if len(upc) == 12:
         return upc
     elif len(upc) == 11:
+        # Convert 11 digit UPC to 12 digit and return that
         sum = 0
         for i in range(upc):
                 if i % 2 == 0:
@@ -23,7 +27,7 @@ def check_validity(upc):
             n = 0
         ere = ''.join((sett, str(n)))
         return ere
-
+    # Return 0 if not 11 or 12 digit UPC
     else:
         return 0
 
@@ -75,10 +79,14 @@ def text_input(inp):
             to_export.append(temp)
             continue
         # Recieve tuple to pass into new spreadsheet
+        # If r is an int instead then passing status
         r=check_input(upc, con, cur, rate_limit)
         if r == 1:
+            # r = 1 when rate limited
             rate_limit = True
+            continue
         try:
+            # Try to insert r's tuple
             temp = list(r)
             temp.insert(0, 0)
             to_export.append(temp)

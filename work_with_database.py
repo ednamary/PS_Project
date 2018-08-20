@@ -123,7 +123,4 @@ def create_input(upc, con, cur):
         new = datum(dat)
         save_to_database(new, con, cur)
         return dat
-#        export(dat)
         # Exit while(true) loop
-
-#def export():z
